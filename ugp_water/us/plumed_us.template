@@ -1,0 +1,6 @@
+# plumed_us.template - umbrella window; XXXX is replaced by the window centre (rad).
+# Energies kJ/mol, angles rad (PLUMED defaults). KAPPA in kJ/mol/rad^2.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+res: RESTRAINT ARG=phi AT=XXXX KAPPA=500.0
+PRINT STRIDE=50 ARG=phi,psi,res.bias FILE=COLVAR    # every 0.1 ps (dt = 2 fs)

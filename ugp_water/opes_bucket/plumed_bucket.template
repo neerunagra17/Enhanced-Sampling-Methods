@@ -1,0 +1,13 @@
+# plumed_bucket.template - ONE bucket of "OPES with bucket sampling".
+# SKELETON ONLY: take the real wall positions, wall constants and the
+# reconstruction code from the NNN-group bucket-sampling tutorial /
+# Javed, Kapakayala & Nair, JCTC 2024 (and its SI, 3-bucket example).
+#   XI_L, XI_U : wall positions of this bucket (rad), from compute_lambda.py
+#   Buckets must overlap only through the walls; phi is periodic, so the
+#   first/last bucket need care at -pi/+pi (follow the group bucket inputs).
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+lw: LOWER_WALLS ARG=phi AT=XI_L KAPPA=WALL_K EXP=2
+uw: UPPER_WALLS ARG=phi AT=XI_U KAPPA=WALL_K EXP=2
+opes: OPES_METAD ARG=phi,psi PACE=500 BARRIER=50 TEMP=300
+PRINT STRIDE=500 ARG=phi,psi,opes.bias,lw.bias,uw.bias FILE=COLVAR

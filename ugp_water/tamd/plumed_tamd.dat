@@ -1,0 +1,11 @@
+# plumed_tamd.dat - TAMD / d-AFED, written in the syntax of the LAB's PLUMED
+# (NNN-group TAMD/TASS tutorials: EXTENDED_LAGRANGIAN with KAPPA, TAU,
+# FRICTION, TEMP).  Start from your working vacuum plumed.dat and change only
+# what is needed; copy the output component names (here *_fict) from it.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+ext: EXTENDED_LAGRANGIAN ARG=phi,psi KAPPA=5260,5260 TAU=0.062,0.062 FRICTION=100,100 TEMP=1500
+#   KAPPA  coupling q-s (kJ/mol/rad^2)    TAU  mass of s via its period (ps)
+#   TEMP   temperature T_s of the auxiliary variables (K)
+PRINT STRIDE=500 ARG=ext.phi_fict,ext.psi_fict FILE=COLVAR       # auxiliary s
+PRINT STRIDE=500 ARG=phi,psi FILE=COLVAR_cc                      # physical q

@@ -1,0 +1,6 @@
+# plumed_opes_restart.dat - segments 2, 3, ...: continue from the saved STATE.
+RESTART
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+opes: OPES_METAD ARG=phi,psi PACE=500 BARRIER=50 TEMP=300 STATE_RFILE=STATE STATE_WFILE=STATE STATE_WSTRIDE=50000
+PRINT STRIDE=500 ARG=phi,psi,opes.bias FILE=COLVAR

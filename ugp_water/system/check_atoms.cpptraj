@@ -1,0 +1,6 @@
+# check_atoms.cpptraj - confirm the atom indices used in every plumed.dat.
+# Usage: cpptraj -p ala_wat.prmtop -i check_atoms.cpptraj
+# Expected: phi = C(ACE) N(ALA) CA(ALA) C(ALA) = atoms 5 7 9 15
+#           psi = N(ALA) CA(ALA) C(ALA) N(NME) = atoms 7 9 15 17
+atominfo @5,7,9,15,17
+quit

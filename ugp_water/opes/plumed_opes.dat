@@ -1,0 +1,8 @@
+# plumed_opes.dat - OPES_METAD on (phi, psi), first segment.
+# Needs PLUMED built with the 'opes' module (check_env.sh).
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+opes: OPES_METAD ARG=phi,psi PACE=500 BARRIER=50 TEMP=300 STATE_WFILE=STATE STATE_WSTRIDE=50000
+# BARRIER is in kJ/mol (50 kJ/mol ~ 12 kcal/mol): it must exceed the real
+# barrier along phi, otherwise phi > 0 is never reached (the vacuum problem).
+PRINT STRIDE=500 ARG=phi,psi,opes.bias FILE=COLVAR

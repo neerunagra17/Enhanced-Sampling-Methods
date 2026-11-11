@@ -1,0 +1,13 @@
+#!/bin/bash
+# job.pbs - generic PBS job wrapper (the lab tutorials submit with qsub).
+# Copy the lab's own sander_plumed.sh header (queue name, modules) if it differs.
+# Usage:  cd <method folder>;  qsub -v CMD="bash run_segments.sh 20 plumed_opes.dat plumed_opes_restart.dat" ../job.pbs
+#PBS -N ugp_md
+#PBS -l nodes=1:ppn=8
+#PBS -l walltime=72:00:00
+#PBS -j oe
+cd $PBS_O_WORKDIR
+source $HOME/ugp_water/settings.sh
+# module load amber plumed            # <- as on your cluster
+# export PLUMED_KERNEL=/path/to/libplumedKernel.so
+eval "$CMD"

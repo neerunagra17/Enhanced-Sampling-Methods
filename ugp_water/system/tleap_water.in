@@ -1,0 +1,9 @@
+# tleap_water.in - ONLY if the lab cannot give you starting files.
+# Usage:  tleap -f tleap_water.in
+source leaprc.protein.ff14SB
+source leaprc.water.tip3p
+ala = sequence { ACE ALA NME }
+solvateOct ala TIP3PBOX 10.0          # truncated octahedron, 10 A buffer
+saveamberparm ala ala_wat.prmtop ala_wat.inpcrd
+savepdb ala ala_wat.pdb
+quit

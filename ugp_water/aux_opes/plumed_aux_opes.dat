@@ -1,0 +1,10 @@
+# plumed_aux_opes.dat - OPTIONAL "auxiliary CV + OPES" (possible extension).
+# Exploratory: OPES bias on the TAMD auxiliary variables instead of a fixed
+# high T_s alone. Exploratory; run only if time permits.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+ext: EXTENDED_LAGRANGIAN ARG=phi,psi KAPPA=5260,5260 TAU=0.062,0.062 FRICTION=100,100 TEMP=300
+opes: OPES_METAD ARG=ext.phi_fict,ext.psi_fict PACE=500 BARRIER=50 TEMP=300
+PRINT STRIDE=500 ARG=ext.phi_fict,ext.psi_fict,phi,psi,opes.bias FILE=COLVAR
+# FES:  reweight_fes.py --colvar COLVAR --phi ext.phi_fict --psi ext.psi_fict \
+#                       --bias opes.bias --T 300 --teff $TEFF --prefix fes_auxopes

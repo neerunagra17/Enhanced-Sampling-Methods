@@ -1,0 +1,13 @@
+# plumed_tass.template - TASS production window (XXXX = umbrella centre, rad).
+# Lab PLUMED syntax, following the NNN-group TASS tutorial (Section 2), adapted
+# to the dipeptide: umbrella on auxiliary phi, WT-MetaD on auxiliary psi,
+# both auxiliary variables at T_s = 900 K.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+ext: EXTENDED_LAGRANGIAN ARG=phi,psi KAPPA=5260,5260 TAU=0.062,0.062 FRICTION=100,100 TEMP=900
+res: RESTRAINT ARG=ext.phi_fict AT=XXXX KAPPA=500.0
+metad: METAD ...
+   ARG=ext.psi_fict PACE=500 HEIGHT=2.4 SIGMA=0.05 BIASFACTOR=4 TEMP=900
+   GRID_MIN=-pi GRID_MAX=pi GRID_BIN=300 FILE=HILLS CALC_RCT
+...
+PRINT STRIDE=50 ARG=ext.phi_fict,ext.psi_fict,phi,psi,res.bias,metad.bias,metad.rbias FILE=COLVAR

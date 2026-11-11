@@ -1,0 +1,11 @@
+# plumed_metad.dat - well-tempered metadynamics on (phi, psi), first segment.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+metad: METAD ...
+   ARG=phi,psi PACE=500 HEIGHT=1.2 SIGMA=0.35,0.35 BIASFACTOR=10 TEMP=300
+   GRID_MIN=-pi,-pi GRID_MAX=pi,pi GRID_BIN=150,150
+   FILE=HILLS CALC_RCT
+...
+# PACE=500 steps = 1 ps between hills; HEIGHT in kJ/mol; SIGMA in rad.
+# CALC_RCT adds metad.rbias = V - c(t), used for the reweighting cross-check.
+PRINT STRIDE=500 ARG=phi,psi,metad.bias,metad.rbias FILE=COLVAR
