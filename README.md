@@ -185,3 +185,24 @@ These are single runs with one set of parameters per method, without statistical
 ## Acknowledgements
 
 We thank Prof. Nisanth N. Nair for his guidance throughout this project and for providing the OPES input files.
+
+
+## Results (interim, four of five methods)
+
+Free-energy surfaces of alanine dipeptide in water at $t_{\text{eff}} = 500$ ns:
+
+![Free-energy surfaces at 500 ns](results/figures/fes2d_500ns_all_methods.png)
+
+One-dimensional profiles along $\phi$ and $\psi$:
+
+![1D free-energy profiles at 500 ns](results/figures/fes1d_profiles_phi_psi_500ns.png)
+
+Internal convergence and sampling coverage as a function of $t_{\text{eff}}$:
+
+![Internal L2 convergence and coverage](results/figures/l2_internal_convergence_and_coverage.png)
+
+Pairwise agreement between methods:
+
+![Pairwise L2 errors](results/figures/l2_pairwise_200ns_500ns.png)
+
+At 500 ns, umbrella sampling, TASS and WT-MetaD agree with one another to 0.28–0.35 kcal/mol in $L^2$, while TAMD deviates systematically. OPES results will be added when the runs are complete. Captions for all figures: [`results/figures/README.md`](results/figures/README.md).
