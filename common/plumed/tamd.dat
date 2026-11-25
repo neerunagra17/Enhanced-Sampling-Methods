@@ -1,0 +1,9 @@
+# tamd.dat - TAMD / d-AFED, 500 ns. Auxiliary variables s at T_s = 1500 K.
+#   KAPPA  q-s coupling (kJ/mol/rad^2); TAU period of s (ps), mass = KAPPA*(TAU/2pi)^2;
+#   FRICTION Langevin friction on s (1/ps); TEMP = T_s (K).
+# NOTE: EXTENDED_LAGRANGIAN has no restart file: after every restart s is reset to q and its
+# velocity to 0 (verified; see VALIDATION.md). Long jobs keep the number of restarts small.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+ext: EXTENDED_LAGRANGIAN ARG=phi,psi KAPPA=5260,5260 TAU=0.062,0.062 FRICTION=100,100 TEMP=1500
+PRINT STRIDE=500 ARG=ext.phi_fict,ext.psi_fict,phi,psi,ext.bias FILE=COLVAR

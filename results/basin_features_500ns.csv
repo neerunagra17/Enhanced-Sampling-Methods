@@ -1,0 +1,7 @@
+surface,G_beta_kJ,G_PII_kJ,G_aR_kJ,G_aL_kJ,barrier_phi0_kJ,barrier_phi2.2_kJ,gmin_phi_deg,gmin_psi_deg
+GASS reference,0.68,0.00,1.04,7.30,25.49,54.37,-72,152
+Umbrella sampling,3.24,0.00,1.83,7.16,28.22,55.73,-68,152
+TASS,2.18,0.00,2.70,8.64,29.60,56.36,-72,152
+WT-MetaD (sum hills),3.14,0.00,1.41,7.53,28.59,56.19,-68,152
+WT-MetaD (reweighted),3.21,0.00,1.63,7.27,28.51,55.63,-72,152
+TAMD,2.01,0.00,4.17,12.42,34.81,61.22,-68,147

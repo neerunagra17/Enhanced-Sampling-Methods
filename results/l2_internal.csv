@@ -1,0 +1,44 @@
+method,t_eff_ns,L2_kcalmol,N_g,missing
+Umbrella sampling,20,0.5324,2259,1981
+Umbrella sampling,40,0.4913,3027,1213
+Umbrella sampling,60,0.4098,3655,585
+Umbrella sampling,80,0.3265,3787,453
+Umbrella sampling,100,0.3018,3854,386
+Umbrella sampling,150,0.2416,3983,257
+Umbrella sampling,200,0.1981,4065,175
+Umbrella sampling,300,0.1552,4146,94
+TASS,20,1.3097,4599,187
+TASS,40,0.4951,4786,0
+TASS,60,0.3482,4786,0
+TASS,80,0.2708,4786,0
+TASS,100,0.2406,4786,0
+TASS,150,0.1672,4786,0
+TASS,200,0.1288,4786,0
+TASS,300,0.0840,4786,0
+WT-MetaD (sum hills),10,0.1914,4865,0
+WT-MetaD (sum hills),20,0.1669,4865,0
+WT-MetaD (sum hills),40,0.1147,4865,0
+WT-MetaD (sum hills),60,0.0781,4865,0
+WT-MetaD (sum hills),80,0.0647,4865,0
+WT-MetaD (sum hills),100,0.0635,4865,0
+WT-MetaD (sum hills),150,0.0592,4865,0
+WT-MetaD (sum hills),200,0.0640,4865,0
+WT-MetaD (sum hills),300,0.0487,4865,0
+WT-MetaD (reweighted),10,0.4330,3650,1221
+WT-MetaD (reweighted),20,0.3593,4457,414
+WT-MetaD (reweighted),40,0.2892,4767,104
+WT-MetaD (reweighted),60,0.2347,4842,29
+WT-MetaD (reweighted),80,0.2019,4863,8
+WT-MetaD (reweighted),100,0.1737,4868,3
+WT-MetaD (reweighted),150,0.1268,4871,0
+WT-MetaD (reweighted),200,0.1001,4871,0
+WT-MetaD (reweighted),300,0.0641,4871,0
+TAMD,10,1.8985,2803,1603
+TAMD,20,1.6625,3443,963
+TAMD,40,1.3627,3940,466
+TAMD,60,1.1924,4120,286
+TAMD,80,1.1054,4209,197
+TAMD,100,1.0314,4259,147
+TAMD,150,0.8413,4356,50
+TAMD,200,0.7091,4388,18
+TAMD,300,0.4957,4406,0

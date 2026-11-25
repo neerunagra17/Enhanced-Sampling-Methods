@@ -1,0 +1,12 @@
+# Software used for the production simulations and the analysis (versions as in the report).
+name: ugp_gpu
+channels:
+  - conda-forge
+dependencies:
+  - openmm=8.4
+  - openmm-plumed=2.1
+  - plumed=2.9.2
+  - numpy
+  - scipy
+  - matplotlib
+  - cxx-compiler        # only to build the OPES library once (common/build_opes.sh)

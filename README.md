@@ -3,150 +3,170 @@
 **CHM 391 Undergraduate Project, Department of Chemistry, IIT Kanpur**
 Kruti Marthak · Neeru Nagra  |  Supervisor: Prof. Nisanth N. Nair
 
-This repository contains the input files, run scripts and analysis code used to compute the conformational free-energy surface (FES) $F(\phi,\psi)$ of alanine dipeptide in explicit water with six enhanced-sampling methods. It also contains the scripts that compare how quickly each method converges.
+This repository contains the simulation code, PLUMED inputs and analysis scripts used to compute the conformational free-energy surface (FES) $F(\phi,\psi)$ of alanine dipeptide in explicit water with five enhanced-sampling methods, and to compare how accurately each method reproduces the surface as a function of the total simulation time. It accompanies the UGP report *Performance Comparison of Enhanced Sampling Methods for the Conformational Free-Energy Surface of Alanine Dipeptide*.
 
-## Methods compared
+## Status
 
-| Method | Bias / mechanism | FES estimator | Folder |
+| Method | Production | Analysis |
+|---|---|---|
+| Umbrella sampling (US) | complete, 32 × 15.625 ns | complete |
+| Well-tempered metadynamics (WT-MetaD) | complete, 1 × 500 ns | complete (two estimators) |
+| TAMD / d-AFED | complete, 1 × 500 ns | complete |
+| TASS | complete, 32 × 15.625 ns | complete |
+| OPES in three windows | submitted, 3 windows (166.666 + 166.666 + 166.668 ns) | pending |
+
+The results in `results/` are therefore an interim comparison of four methods. The final five-method comparison will be added when the OPES runs are complete.
+
+## Methods
+
+| Method | Bias / mechanism | FES estimator | Inputs |
 |---|---|---|---|
-| Umbrella sampling (US) | 32 harmonic windows along $\phi$ | 2D WHAM | `us/` |
-| Well-tempered metadynamics (WT-MetaD) | Gaussian bias on $(\phi,\psi)$ | `sum_hills` / reweighting | `metad/` |
-| OPES | On-the-fly probability-based bias on $(\phi,\psi)$ | Reweighting | `opes/` |
-| TAMD / d-AFED | Auxiliary CVs at high temperature $T_s$ | Histogram at $T_s$ | `tamd/` |
-| TASS | US on aux. $\phi$ + WT-MetaD on aux. $\psi$, at $T_s$ | Reweighting + WHAM | `tass/` |
-| OPES + buckets | Flat-bottomed walls along $\phi$, OPES inside | Mean-force reconstruction | `opes_bucket/` |
-| *Aux. CV + OPES (optional)* | OPES bias on TAMD auxiliary variables | Reweighting | `aux_opes/` |
+| Umbrella sampling | 32 harmonic windows along $\phi$ | 2D WHAM | `common/plumed/us.template` |
+| WT-MetaD | Gaussian bias on $(\phi,\psi)$ | sum of hills; reweighting with $V - c(t)$ | `common/plumed/metad.dat` |
+| TAMD / d-AFED | auxiliary variables for $\phi,\psi$ at $T_s$ | histogram of the auxiliary variables at $T_s$ | `common/plumed/tamd.dat` |
+| TASS | umbrella on auxiliary $\phi$ + WT-MetaD on auxiliary $\psi$, at $T_s$ | reweighting + WHAM at $T_s$ | `common/plumed/tass.template` |
+| OPES (three windows) | `OPES_METAD` on $(\phi,\psi)$ inside three overlapping $\phi$ windows with walls | reweighting + WHAM (planned) | provided by our supervisor (not included) |
 
-**Performance metric:** the $L^2$ (RMS) error of each FES against a reference surface, plotted against the total simulation time $t_{\text{eff}} = n_{\text{windows}} \times t_{\text{window}}$:
+### Parameters
 
-$$
-L^2 = \sqrt{\frac{1}{N_g}\sum_{i=1}^{N_g}\bigl[F_{\text{ref}}(i)-F_{\text{sim}}(i)\bigr]^2},\qquad F_{\text{ref}}(i) < F_{\text{cut}}
-$$
+| Method | Parameters (energies kJ/mol, angles rad) |
+|---|---|
+| US | 32 centres 0.2 apart (`common/windows.sh`), $k = 500$ kJ mol⁻¹ rad⁻²; 100 ps chained preparation per window; 15.625 ns production per window; COLVAR every 0.1 ps |
+| WT-MetaD | height 1.2, width 0.35, one Gaussian per ps, bias factor $\gamma = 10$, 150 × 150 bias grid, `CALC_RCT`; COLVAR every 1 ps |
+| TAMD | `EXTENDED_LAGRANGIAN`, $\kappa = 5260$ kJ mol⁻¹ rad⁻², $\tau = 0.062$ ps, friction 100 ps⁻¹, $T_s = 1500$ K; COLVAR every 1 ps |
+| TASS | auxiliary variables as in TAMD at $T_s = 900$ K; 32 umbrella windows on $\tilde\phi$ (same centres, $k = 500$); WT-MetaD on $\tilde\psi$ (height 2.4, width 0.05, one Gaussian per ps, $\gamma = 4$, at 900 K); same chained preparation as US; COLVAR every 0.1 ps |
+| OPES | three overlapping windows along $\phi$; 166.666 + 166.666 + 166.668 ns |
 
-All surfaces are put on a common 72 × 72 grid (5° bins) and shifted so that their minimum is zero.
+The OPES input files were provided by our supervisor, Prof. Nisanth N. Nair, and are not included in this repository. The OPES windows are run in the same OpenMM + PLUMED set-up as the other methods; `common/build_opes.sh` builds PLUMED's `OPES_METAD` as a runtime library, because the PLUMED 2.9.2 build used has no OPES module.
 
 ## Simulation set-up
 
 | | |
 |---|---|
-| System | Ace–Ala–Nme, AMBER ff14SB, TIP3P water, truncated octahedron |
-| Engine | AMBER `sander.MPI` + PLUMED 2 |
-| Ensemble | NVT, 300 K, Langevin thermostat (γ = 1 ps⁻¹) |
-| Time step | 2 fs, SHAKE on bonds to hydrogen |
-| Electrostatics | PME, 10 Å cut-off |
+| System | Ace–Ala–Nme, AMBER ff14SB, TIP3P water, 2,767 atoms, periodic |
+| Equilibration | minimisation, heating to 300 K, 2 ns $NPT$ at 300 K and 1 bar; the final state (positions, velocities, box) is the common starting state |
+| Engine | OpenMM 8.4 + openmm-plumed 2.1 + PLUMED 2.9.2 |
+| Hardware | NVIDIA Tesla V100, OpenCL platform, mixed precision (PARAM Sanganak, SLURM) |
+| Production ensemble | $NVT$ at the final $NPT$ box, 300 K, `LangevinMiddleIntegrator`, friction 1 ps⁻¹ |
+| Time step | 2 fs; bonds to hydrogen constrained, rigid water |
+| Electrostatics | PME, 1.0 nm real-space cut-off |
 | CVs | $\phi$ (atoms 5-7-9-15), $\psi$ (atoms 7-9-15-17) |
-| Units | kJ/mol, rad, ps throughout, as written by PLUMED |
+| Checkpoints | every 100 ps (OpenMM state and PLUMED files synchronised); runs continue from checkpoints after the wall-time limit |
+| Units | kJ/mol, nm, ps, rad (PLUMED); L² errors reported in kcal/mol |
+
+WT-MetaD and TAMD start directly from the equilibrated state. Umbrella sampling and TASS start from 32 window structures generated by a chained 100 ps preparation run per window, started from the equilibrated state. The preparation runs are not counted in $t_{\text{eff}}$.
+
+The auxiliary variables of `EXTENDED_LAGRANGIAN` have no restart file in PLUMED 2.9.2; at every continuation they are re-initialised at the current $\phi,\psi$ with zero velocity.
 
 ## Repository layout
 
 ```
 .
-├── settings.sh        shared settings, sourced by every script (paths, NPROC, grid, F_cut, t_eff)
-├── check_env.sh       checks AMBER, PLUMED (METAD, OPES_METAD, EXTENDED_LAGRANGIAN) and Python
-├── job.pbs            generic PBS job wrapper
-├── system/            tleap, minimisation, heating, NPT equilibration, atom-index check
-├── us/                umbrella sampling: sequential preparation + parallel production windows
-├── metad/             well-tempered metadynamics (restartable 10 ns segments)
-├── opes/              OPES_METAD (restartable segments)
-├── tamd/              TAMD / d-AFED with EXTENDED_LAGRANGIAN
-├── tass/              TASS windows (aux. φ umbrellas + aux. ψ WT-MetaD at T_s = 900 K)
-├── opes_bucket/       OPES with bucket sampling (template)
-├── aux_opes/          optional: OPES on auxiliary variables
-├── analysis/          Python analysis library
-├── ref/               reference FES goes here (ref/fes_ref.dat)
-└── results/           FES files, L2 tables and figures (run_l2_all.sh)
+├── README.md
+├── environment.yml       conda environment (OpenMM, openmm-plumed, PLUMED, numpy, scipy, matplotlib)
+├── config.sh             every setting: paths, SLURM, MD settings, lengths, analysis
+├── submit.sh             submits the jobs (check, preparation, windows, single trajectories)
+├── system/               topology and equilibrated starting state
+├── common/
+│   ├── md.py             OpenMM + PLUMED runner with checkpoint/restart
+│   ├── lib.sh            shared shell functions
+│   ├── windows.sh        window centres and force constant (US, TASS)
+│   ├── status.py         progress of every run
+│   ├── build_opes.sh     builds PLUMED's OPES_METAD as a runtime library
+│   └── plumed/           PLUMED inputs: us.template, metad.dat, tamd.dat, tass.template
+├── slurm/                job scripts: environment/smoke/restart check, preparation, windows, single runs
+├── checks/               check_env.py, check_outputs.py
+├── analysis/             FES estimators, L² error, convergence table, plots
+├── ref/                  how to supply the GASS reference surface (not included)
+└── results/              FES files and L² tables of the four completed methods
 ```
 
 ### Analysis scripts (`analysis/`)
 
 | Script | Purpose |
 |---|---|
-| `fesutils.py` | Shared helpers: COLVAR reading, periodic grids, histograms, FES I/O, interpolation |
-| `wham2d.py` | 2D WHAM for umbrella windows on a φ bias (also used for TASS at $T_s$) |
-| `reweight_fes.py` | FES by reweighting (OPES, MetaD rbias, TAMD at $T_s$) at each $t_{\text{eff}}$ |
-| `metad_checkpoints.py` | `plumed sum_hills` at each $t_{\text{eff}}$ checkpoint |
-| `l2_error.py` | $L^2$ error of a set of FES files against a reference |
-| `plot_l2.py` | $L^2$ vs $t_{\text{eff}}$ for all methods |
-| `plot_fes.py`, `plot_overlap.py`, `plot_traces.py` | FES maps, window overlap, CV time series |
+| `fesutils.py` | COLVAR reading, periodic grids, histograms, FES I/O, periodic interpolation |
+| `wham2d.py` | 2D WHAM for windows biased along $\phi$ (US at 300 K; TASS at 900 K with `metad.rbias` weights) |
+| `reweight_fes.py` | FES by reweighting (WT-MetaD with `metad.rbias`; TAMD at $T_s$) |
+| `sumhills_py.py` | bias-derived WT-MetaD FES from `HILLS` (pure-Python `sum_hills`) |
+| `metad_checkpoints.py` | the same with `plumed sum_hills`, where PLUMED is installed |
+| `run_fes_checkpoints.sh` | all FES at all $t_{\text{eff}}$ checkpoints |
+| `l2_error.py` | $L^2$ error function and command-line tool |
+| `plot_compare.py` | 2D/1D FES figures, internal and pairwise $L^2$, $L^2$ against a reference |
+| `plot_external.py` | comparison with the GASS reference (maps, difference maps, profiles, table) |
+| `plot_individual.py` | per-method $L^2$ curves |
+| `convergence_table.py` | first $t_{\text{eff}}$ below $k_BT$ / 0.5 kcal/mol (report Tables 6.3–6.4) |
+| `plot_fes.py`, `plot_overlap.py`, `plot_traces.py` | single FES maps, window overlap, CV time series |
 
 ## Requirements
 
-- AMBER (AmberTools ≥ 20) with `sander.MPI` patched with **PLUMED 2.8+**, including the `opes` module
-- Python 3.8+ with `numpy`, `scipy` and `matplotlib`
-- A PBS cluster (to use `job.pbs`); scripts also run interactively
-
 ```bash
-pip install numpy scipy matplotlib
+conda env create -f environment.yml
+conda activate ugp_gpu
+bash common/build_opes.sh        # once; only needed for OPES
 ```
 
-## Quick start
+A SLURM cluster with a GPU partition is assumed for production (`config.sh`, block `SITE`). The analysis needs only Python with numpy, scipy and matplotlib.
+
+## Running the simulations
 
 ```bash
-git clone https://github.com/neerunagra17/<repo-name>.git $HOME/ugp_water
-cd $HOME/ugp_water
-nano settings.sh          # set PROJ, NPROC, MDEXE
-bash check_env.sh
+export PROJ=/path/to/project            # output root; system files in $PROJ/01_system
+cp system/ala_water.prmtop system/gpu_npt_final.xml $PROJ/01_system/
+nano config.sh                          # SITE block: environment activation, partition, wall time, account
+
+bash submit.sh check                    # environment check + smoke/restart test of every method (GPU node)
+bash submit.sh us_prep                  # 32 x 100 ps chained preparation
+bash submit.sh tass_prep
+bash submit.sh metad                    # 500 ns, resubmits itself until finished
+bash submit.sh tamd
+bash submit.sh us_prod                  # 32 production windows (job array), after us_prep
+bash submit.sh tass_prod                # after tass_prep
+bash submit.sh status                   # progress of every run
 ```
 
-**1. System:** use existing `system/ala_wat.prmtop` and `system/ala_npt.rst` files, or build them:
+## Analysis
+
 ```bash
-cd $PROJ/system
-tleap -f tleap_water.in
-qsub -v CMD="bash run_equil.sh" ../job.pbs
-cpptraj -p ala_wat.prmtop -i check_atoms.cpptraj     # confirm φ/ψ atom indices
+# 1. FES at every t_eff checkpoint (10, 20, 40, 60, 80, 100, 150, 200, 300, 500 ns)
+DATA=/path/to/production_output bash analysis/run_fes_checkpoints.sh
+
+# 2. L2 errors and figures (inside results/)
+cd results
+PYTHONPATH=../analysis python3 ../analysis/plot_compare.py                  # internal + pairwise
+PYTHONPATH=../analysis python3 ../analysis/plot_compare.py --ref fes_ref.dat
+PYTHONPATH=../analysis python3 ../analysis/plot_external.py                 # needs fes_ref.dat
+python3 ../analysis/convergence_table.py l2_ref.csv
 ```
 
-**2. Run each method:**
-```bash
-# Umbrella sampling
-cd $PROJ/us && qsub -v CMD="bash run_us_prep.sh" ../job.pbs
-bash submit_windows.sh                                   # after prep/ is complete
+**Effective simulation time.** $t_{\text{eff}}$ is the total production time of a method: the trajectory length for WT-MetaD and TAMD, and $32 \times t_w$ for the window methods, where every window contributes its first $t_{\text{eff}}/32$. The first 0.5 ns of each US/TASS window and the first 1 ns of the WT-MetaD trajectory (reweighted estimate) are discarded but still counted in $t_{\text{eff}}$.
 
-# WT-MetaD and OPES (20 × 10 ns segments, restartable)
-cd $PROJ/metad && qsub -v CMD="bash run_segments.sh 20 plumed_metad.dat plumed_metad_restart.dat" ../job.pbs
-cd $PROJ/opes  && qsub -v CMD="bash run_segments.sh 20 plumed_opes.dat plumed_opes_restart.dat" ../job.pbs
+**$L^2$ error.** All surfaces are put on a common 72 × 72 grid (5° bins) and shifted to a minimum of zero. Over the grid points with $F_{\text{ref}} < F_{\text{cut}} = 14.58$ kcal/mol (61.0 kJ/mol) that the estimate has visited,
 
-# TAMD
-cd $PROJ/tamd && qsub -v CMD="bash run_tamd.sh" ../job.pbs
+$$
+L^2 = \sqrt{\frac{1}{N_g}\sum_{i=1}^{N_g}\bigl[F_{\text{sim}}(i)-\Delta-F_{\text{ref}}(i)\bigr]^2},\qquad
+\Delta = \frac{1}{N_g}\sum_{i=1}^{N_g}\bigl[F_{\text{sim}}(i)-F_{\text{ref}}(i)\bigr],
+$$
 
-# TASS
-cd $PROJ/tass && qsub -v CMD="bash ../us/run_us_prep.sh" ../job.pbs
-TEMPLATE=plumed_tass.template MDIN=tass_prod.in bash ../us/submit_windows.sh
+i.e. $F_{\text{sim}}$ is mean-aligned to $F_{\text{ref}}$. Unvisited points are excluded and reported separately. $L^2$ is reported in kcal/mol; surfaces are plotted in kJ/mol. Three references are used: each method's own 500 ns surface (internal convergence), the other methods at the same $t_{\text{eff}}$ (pairwise agreement), and the GASS surface (external agreement).
 
-# OPES + buckets (set BUCKETS, WALL_K, STARTS first)
-cd $PROJ/opes_bucket && qsub -v CMD="bash run_buckets.sh" ../job.pbs
-```
+**Bias-derived WT-MetaD estimate.** PLUMED writes well-tempered hill heights in `HILLS` already multiplied by $\gamma/(\gamma-1)$, so the sum of the stored Gaussians equals $-F$. `sumhills_py.py` therefore computes $F = -\sum(\text{stored hills})$ and applies no further factor; `plumed sum_hills` (`metad_checkpoints.py`) gives the same result.
 
-**3. Free-energy surfaces at each $t_{\text{eff}}$:**
-```bash
-cd $PROJ/us    && bash make_meta.sh && bash us_checkpoints.sh
-cd $PROJ/metad && python3 $ANALYSIS/metad_checkpoints.py --hills HILLS --teff $TEFF --prefix ../results/fes_metad
-cd $PROJ/opes  && python3 $ANALYSIS/reweight_fes.py --colvar COLVAR --bias opes.bias --T 300 --teff $TEFF --prefix ../results/fes_opes
-cd $PROJ/tamd  && python3 $ANALYSIS/reweight_fes.py --colvar COLVAR --phi ext.phi_fict --psi ext.psi_fict --T 1500 --teff $TEFF --prefix ../results/fes_tamd
-cd $PROJ/tass  && bash tass_checkpoints.sh
-```
+**Reference.** The GASS surface was provided for this project and is not included (`ref/README.md`). Its simulation conditions are not recorded with the file, so it serves as an external benchmark rather than an exact reference.
 
-**4. Performance comparison:** put the reference FES in `ref/fes_ref.dat` (columns `phi psi F`, kJ/mol), then:
-```bash
-cd $PROJ/results
-bash run_l2_all.sh
-```
-This writes `l2_<method>_ref.csv` and `l2_<method>_int.csv`, and the two summary figures `l2_vs_teff_ref.pdf` (error against the reference) and `l2_vs_teff_internal.pdf` (internal convergence).
+## Results at $t_{\text{eff}} = 500$ ns (interim, four methods)
 
-## Checks before trusting a surface
+External $L^2$ error against the GASS reference (kcal/mol, mean alignment; 4619 reference points), from `results/l2_external_table.csv`:
 
-- **US / TASS:** neighbouring window histograms overlap over the full φ range (`plot_overlap.py`).
-- **MetaD / OPES:** φ crosses between the φ < 0 and φ > 0 basins many times (`plot_traces.py`).
-- **TAMD:** the physical CV follows the auxiliary variable closely (adiabatic separation).
-- **Units:** PLUMED biases are in kJ/mol. Reweighting must use $k_BT$ in kJ/mol (2.494 at 300 K).
-- **OPES:** `BARRIER` must exceed the φ barrier (≈ 40 kJ/mol). A value that is too low gives a stable but wrong FES.
+| Estimate | $L^2$ | unvisited points |
+|---|---|---|
+| Umbrella sampling | 0.48 | 596 |
+| TASS | 0.45 | 0 |
+| WT-MetaD (sum of hills) | 0.38 | 0 |
+| WT-MetaD (reweighted) | 0.41 | 0 |
+| TAMD | 1.12 | 44 |
 
-## Status
-
-- [x] Input files and analysis pipeline; analysis scripts validated on synthetic data with a known FES
-- [x] Preliminary vacuum runs (US, TAMD, OPES)
-- [ ] Production runs in water
-- [ ] $L^2$ vs $t_{\text{eff}}$ comparison and final report
+These are single runs with one set of parameters per method, without statistical uncertainties; differences of about 0.1 kcal/mol between methods are not resolved by this comparison. The bias-derived WT-MetaD estimate has no unvisited points by construction (a sum of Gaussians is finite everywhere). See the report, Chapter 6, for the full analysis.
 
 ## Key references
 
@@ -157,12 +177,11 @@ This writes `l2_<method>_ref.csv` and `l2_<method>_int.csv`, and the two summary
 5. L. Maragliano and E. Vanden-Eijnden, *Chem. Phys. Lett.* **426**, 168 (2006). TAMD
 6. J. B. Abrams and M. E. Tuckerman, *J. Phys. Chem. B* **112**, 15742 (2008). d-AFED
 7. S. Awasthi and N. N. Nair, *J. Chem. Phys.* **146**, 094108 (2017). TASS
-8. A. Pal *et al.*, *J. Comput. Chem.* **42**, 1996 (2021). Mean-force TASS
+8. A. Pal *et al.*, *J. Comput. Chem.* **42**, 1996 (2021). Mean-force TASS; $L^2$ error
 9. R. Javed, A. B. Kapakayala and N. N. Nair, *J. Chem. Theory Comput.* **20** (2024), [doi:10.1021/acs.jctc.4c00776](https://pubs.acs.org/doi/10.1021/acs.jctc.4c00776). Bucket sampling
-10. G. A. Tribello *et al.*, *Comput. Phys. Commun.* **185**, 604 (2014). PLUMED 2
-
-The tutorials of the [NNN group, IIT Kanpur](https://sites.google.com/view/the-nnn-group/tutorials) were followed for US/WHAM, TAMD, TASS and bucket sampling.
+10. P. Eastman *et al.*, *J. Phys. Chem. B* **128**, 109 (2024). OpenMM 8
+11. G. A. Tribello *et al.*, *Comput. Phys. Commun.* **185**, 604 (2014). PLUMED 2
 
 ## Acknowledgements
 
-We thank Prof. Nisanth N. Nair for his guidance throughout this project.
+We thank Prof. Nisanth N. Nair for his guidance throughout this project and for providing the OPES input files.

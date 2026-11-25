@@ -1,0 +1,11 @@
+# tass.template - TASS production window (@CENTRE@ = umbrella centre on auxiliary phi, rad).
+# Umbrella on aux. phi + WT-MetaD on aux. psi, both auxiliary variables at T_s = 900 K.
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+ext: EXTENDED_LAGRANGIAN ARG=phi,psi KAPPA=5260,5260 TAU=0.062,0.062 FRICTION=100,100 TEMP=900
+res: RESTRAINT ARG=ext.phi_fict AT=@CENTRE@ KAPPA=500.0
+metad: METAD ...
+   ARG=ext.psi_fict PACE=500 HEIGHT=2.4 SIGMA=0.05 BIASFACTOR=4 TEMP=900
+   GRID_MIN=-pi GRID_MAX=pi GRID_BIN=300 FILE=HILLS CALC_RCT
+...
+PRINT STRIDE=50 ARG=ext.phi_fict,ext.psi_fict,phi,psi,res.bias,metad.bias,metad.rbias FILE=COLVAR

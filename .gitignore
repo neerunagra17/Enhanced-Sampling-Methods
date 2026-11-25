@@ -1,0 +1,23 @@
+# Python / OS / editor
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+*.swp
+
+# compiled OPES library (built locally with common/build_opes.sh)
+common/plumed_lib/
+
+# simulation output (kept on the cluster, not in the repository)
+*.dcd
+*.nc
+*.chk
+state.xml
+progress.json
+md.log
+logs/
+00_checks/
+
+# reference surface (not redistributed; see ref/README.md)
+ref/fes_ref.dat
+results/fes_ref.dat
