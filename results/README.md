@@ -1,12 +1,13 @@
-# Results (interim: four of five methods)
+# Results
 
-Free-energy surfaces and L² errors of umbrella sampling, TASS, WT-MetaD (two estimators) and
-TAMD at the common t_eff checkpoints (10–500 ns). OPES results are pending.
+Free-energy surfaces and L² errors of umbrella sampling, TASS, WT-MetaD (two estimators), TAMD,
+OPES and OPES with buckets at the common t_eff checkpoints (10–500 ns; OPES with buckets also
+750, 1000 and 1500 ns, i.e. the full 500 ns per bucket).
 
 Files
 - `fes_<method>_<t>ns.dat` — FES on the common 72 × 72 grid, φ, ψ in rad, F in kJ/mol, min = 0,
   unvisited bins non-finite. `<method>`: `us`, `tass`, `metad` (bias-derived, sum of hills),
-  `metadrw` (reweighted with `metad.rbias`), `tamd`.
+  `metadrw` (reweighted with `metad.rbias`), `tamd`, `opes`, `opesb` (OPES with buckets).
 - `l2_ref.csv`, `l2_external_table.csv` — L² against the GASS reference (mean alignment; the
   second file also gives minimum alignment).
 - `l2_internal.csv` — L² against the same method's 500 ns surface.

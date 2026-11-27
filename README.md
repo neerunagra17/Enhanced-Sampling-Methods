@@ -13,9 +13,10 @@ This repository contains the simulation code, PLUMED inputs and analysis scripts
 | Well-tempered metadynamics (WT-MetaD) | complete, 1 × 500 ns | complete (two estimators) |
 | TAMD / d-AFED | complete, 1 × 500 ns | complete |
 | TASS | complete, 32 × 15.625 ns | complete |
-| OPES in three windows | submitted, 3 windows (166.666 + 166.666 + 166.668 ns) | pending |
+| OPES | complete, 1 × 500 ns | complete |
+| OPES with buckets | complete, 3 buckets × 500 ns | complete |
 
-The results in `results/` are therefore an interim comparison of four methods. The final five-method comparison will be added when the OPES runs are complete.
+All production runs and analyses are complete.
 
 ## Methods
 
@@ -25,7 +26,8 @@ The results in `results/` are therefore an interim comparison of four methods. T
 | WT-MetaD | Gaussian bias on $(\phi,\psi)$ | sum of hills; reweighting with $V - c(t)$ | `common/plumed/metad.dat` |
 | TAMD / d-AFED | auxiliary variables for $\phi,\psi$ at $T_s$ | histogram of the auxiliary variables at $T_s$ | `common/plumed/tamd.dat` |
 | TASS | umbrella on auxiliary $\phi$ + WT-MetaD on auxiliary $\psi$, at $T_s$ | reweighting + WHAM at $T_s$ | `common/plumed/tass.template` |
-| OPES (three windows) | `OPES_METAD` on $(\phi,\psi)$ inside three overlapping $\phi$ windows with walls | reweighting + WHAM (planned) | provided by our supervisor (not included) |
+| OPES | `OPES_METAD` on $(\phi,\psi)$ | reweighting with $e^{\beta V}$ | `opes/plumed_opes.dat` |
+| OPES with buckets | `OPES_METAD` on $(\phi,\psi)$ inside three overlapping $\phi$ buckets with quartic walls | reweighting per bucket, stitched on the overlaps | provided by our supervisor (not included) |
 
 ### Parameters
 
@@ -35,9 +37,12 @@ The results in `results/` are therefore an interim comparison of four methods. T
 | WT-MetaD | height 1.2, width 0.35, one Gaussian per ps, bias factor $\gamma = 10$, 150 × 150 bias grid, `CALC_RCT`; COLVAR every 1 ps |
 | TAMD | `EXTENDED_LAGRANGIAN`, $\kappa = 5260$ kJ mol⁻¹ rad⁻², $\tau = 0.062$ ps, friction 100 ps⁻¹, $T_s = 1500$ K; COLVAR every 1 ps |
 | TASS | auxiliary variables as in TAMD at $T_s = 900$ K; 32 umbrella windows on $\tilde\phi$ (same centres, $k = 500$); WT-MetaD on $\tilde\psi$ (height 2.4, width 0.05, one Gaussian per ps, $\gamma = 4$, at 900 K); same chained preparation as US; COLVAR every 0.1 ps |
-| OPES | three overlapping windows along $\phi$; 166.666 + 166.666 + 166.668 ns |
+| OPES | `BARRIER` 50 kJ/mol ($\gamma \approx 20$), one kernel per ps, adaptive kernel width; 500 ns |
+| OPES with buckets | three overlapping $\phi$ buckets bounded by quartic walls, `BARRIER` 40 kJ/mol, initial kernel width 0.15 rad; 500 ns per bucket |
 
-The OPES input files were provided by our supervisor, Prof. Nisanth N. Nair, and are not included in this repository. The OPES windows are run in the same OpenMM + PLUMED set-up as the other methods; `common/build_opes.sh` builds PLUMED's `OPES_METAD` as a runtime library, because the PLUMED 2.9.2 build used has no OPES module.
+The OPES input files, including the bucket definitions, were provided by our supervisor, Prof. Nisanth N. Nair; the bucket inputs are not included in this repository.
+
+**OPES system and software.** Both OPES simulations used the solvated system supplied with these inputs: 2,101 atoms (the dipeptide and 693 TIP3P water molecules, triclinic box). They were run with `opes/openmm_run.py` (OpenMM + PLUMED 2.10, which includes the OPES module) and `opes/run_job.slurm`, with the same MD settings as the other methods: $NVT$, 300 K, Langevin (1 ps⁻¹), 2 fs, H-bond constraints, rigid water, PME 1.0 nm. The OPES state is written every 2 ns and read back at every restart. The system files are not included.
 
 ## Simulation set-up
 
@@ -72,13 +77,14 @@ The auxiliary variables of `EXTENDED_LAGRANGIAN` have no restart file in PLUMED 
 │   ├── lib.sh            shared shell functions
 │   ├── windows.sh        window centres and force constant (US, TASS)
 │   ├── status.py         progress of every run
-│   ├── build_opes.sh     builds PLUMED's OPES_METAD as a runtime library
+│   ├── build_opes.sh     builds OPES_METAD for PLUMED 2.9.2 (environment check only)
 │   └── plumed/           PLUMED inputs: us.template, metad.dat, tamd.dat, tass.template
 ├── slurm/                job scripts: environment/smoke/restart check, preparation, windows, single runs
+├── opes/                 OPES runner (openmm_run.py), SLURM launcher, GPU check, PLUMED input of the OPES run
 ├── checks/               check_env.py, check_outputs.py
 ├── analysis/             FES estimators, L² error, convergence table, plots
 ├── ref/                  how to supply the GASS reference surface (not included)
-└── results/              FES files and L² tables of the four completed methods
+└── results/              FES files, L² tables and figures of all methods
 ```
 
 ### Analysis scripts (`analysis/`)
@@ -87,7 +93,8 @@ The auxiliary variables of `EXTENDED_LAGRANGIAN` have no restart file in PLUMED 
 |---|---|
 | `fesutils.py` | COLVAR reading, periodic grids, histograms, FES I/O, periodic interpolation |
 | `wham2d.py` | 2D WHAM for windows biased along $\phi$ (US at 300 K; TASS at 900 K with `metad.rbias` weights) |
-| `reweight_fes.py` | FES by reweighting (WT-MetaD with `metad.rbias`; TAMD at $T_s$) |
+| `reweight_fes.py` | FES by reweighting (WT-MetaD with `metad.rbias`; TAMD at $T_s$; OPES with `opes.bias`) |
+| `bucket_stitch.py` | OPES with buckets: reweighting of each bucket with OPES + wall bias, least-squares stitching on the overlaps |
 | `sumhills_py.py` | bias-derived WT-MetaD FES from `HILLS` (pure-Python `sum_hills`) |
 | `metad_checkpoints.py` | the same with `plumed sum_hills`, where PLUMED is installed |
 | `run_fes_checkpoints.sh` | all FES at all $t_{\text{eff}}$ checkpoints |
@@ -103,7 +110,6 @@ The auxiliary variables of `EXTENDED_LAGRANGIAN` have no restart file in PLUMED 
 ```bash
 conda env create -f environment.yml
 conda activate ugp_gpu
-bash common/build_opes.sh        # once; only needed for OPES
 ```
 
 A SLURM cluster with a GPU partition is assumed for production (`config.sh`, block `SITE`). The analysis needs only Python with numpy, scipy and matplotlib.
@@ -123,6 +129,11 @@ bash submit.sh tamd
 bash submit.sh us_prod                  # 32 production windows (job array), after us_prep
 bash submit.sh tass_prod                # after tass_prep
 bash submit.sh status                   # progress of every run
+
+# OPES (separate environment with PLUMED 2.10; run from a job folder containing
+# topol.top, start.gro, plumed_first.dat, plumed_restart.dat, openmm_run.py, test_ctx.py)
+export MM_ROOT=/path/to/micromamba
+sbatch --job-name=opes --export=ALL,NS=500 opes/run_job.slurm
 ```
 
 ## Analysis
@@ -139,7 +150,9 @@ PYTHONPATH=../analysis python3 ../analysis/plot_external.py                 # ne
 python3 ../analysis/convergence_table.py l2_ref.csv
 ```
 
-**Effective simulation time.** $t_{\text{eff}}$ is the total production time of a method: the trajectory length for WT-MetaD and TAMD, and $32 \times t_w$ for the window methods, where every window contributes its first $t_{\text{eff}}/32$. The first 0.5 ns of each US/TASS window and the first 1 ns of the WT-MetaD trajectory (reweighted estimate) are discarded but still counted in $t_{\text{eff}}$.
+OPES: `reweight_fes.py --colvar COLVAR --bias opes.bias --T 300 --teff $TEFF --prefix fes_opes`. OPES with buckets: `bucket_stitch.py <dir with bucket_b1..b3> fes_opesb <t_eff list>`.
+
+**Effective simulation time.** $t_{\text{eff}}$ is the total production time of a method: the trajectory length for WT-MetaD, TAMD and OPES, $32 \times t_w$ for US and TASS, and $3 \times t_b$ for OPES with buckets, where every window or bucket contributes its first $t_{\text{eff}}/n$. $t_{\text{eff}} = 500$ ns for OPES with buckets therefore uses the first 166.7 ns of each bucket; the full runs correspond to 1500 ns. The first 0.5 ns of each US/TASS window and the first 1 ns of the WT-MetaD trajectory (reweighted estimate) are discarded but still counted in $t_{\text{eff}}$.
 
 **$L^2$ error.** All surfaces are put on a common 72 × 72 grid (5° bins) and shifted to a minimum of zero. Over the grid points with $F_{\text{ref}} < F_{\text{cut}} = 14.58$ kcal/mol (61.0 kJ/mol) that the estimate has visited,
 
@@ -154,7 +167,7 @@ i.e. $F_{\text{sim}}$ is mean-aligned to $F_{\text{ref}}$. Unvisited points are 
 
 **Reference.** The GASS surface was provided for this project and is not included (`ref/README.md`). Its simulation conditions are not recorded with the file, so it serves as an external benchmark rather than an exact reference.
 
-## Results at $t_{\text{eff}} = 500$ ns (interim, four methods)
+## Results at $t_{\text{eff}} = 500$ ns
 
 External $L^2$ error against the GASS reference (kcal/mol, mean alignment; 4619 reference points), from `results/l2_external_table.csv`:
 
@@ -165,8 +178,10 @@ External $L^2$ error against the GASS reference (kcal/mol, mean alignment; 4619 
 | WT-MetaD (sum of hills) | 0.38 | 0 |
 | WT-MetaD (reweighted) | 0.41 | 0 |
 | TAMD | 1.12 | 44 |
+| OPES | 0.41 | 0 |
+| OPES with buckets | 0.41 | 2 |
 
-These are single runs with one set of parameters per method, without statistical uncertainties; differences of about 0.1 kcal/mol between methods are not resolved by this comparison. The bias-derived WT-MetaD estimate has no unvisited points by construction (a sum of Gaussians is finite everywhere). See the report, Chapter 6, for the full analysis.
+These are single runs with one set of parameters per method, without statistical uncertainties; differences of about 0.1 kcal/mol between methods are not resolved by this comparison. The bias-derived WT-MetaD estimate has no unvisited points by construction (a sum of Gaussians is finite everywhere). The OPES simulations used a different, smaller system; they agree with WT-MetaD to 0.10–0.12 kcal/mol. See the report, Chapter 6, for the full analysis.
 
 ## Key references
 
@@ -187,7 +202,7 @@ These are single runs with one set of parameters per method, without statistical
 We thank Prof. Nisanth N. Nair for his guidance throughout this project and for providing the OPES input files.
 
 
-## Results (interim, four of five methods)
+## Result figures
 
 Free-energy surfaces of alanine dipeptide in water at $t_{\text{eff}} = 500$ ns:
 
@@ -205,4 +220,4 @@ Pairwise agreement between methods:
 
 ![Pairwise L2 errors](results/figures/l2_pairwise_200ns_500ns.png)
 
-At 500 ns, umbrella sampling, TASS and WT-MetaD agree with one another to 0.28–0.35 kcal/mol in $L^2$, while TAMD deviates systematically. OPES results will be added when the runs are complete. Captions for all figures: [`results/figures/README.md`](results/figures/README.md).
+At 500 ns, umbrella sampling, TASS, WT-MetaD and OPES agree with one another to 0.10–0.35 kcal/mol in $L^2$, while TAMD deviates systematically. Captions for all figures: [`results/figures/README.md`](results/figures/README.md).

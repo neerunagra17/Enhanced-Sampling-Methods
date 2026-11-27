@@ -20,8 +20,9 @@ RAINBOW = [(0.00, "#ff0000"), (0.10, "#ff9a00"), (0.20, "#ffee00"), (0.30, "#b6f
 CLAY = [c for _, c in RAINBOW]
 CMAP = LinearSegmentedColormap.from_list("rainbow_red_pink", RAINBOW)
 METHODS = [("us", "Umbrella sampling"), ("tass", "TASS"), ("metad", "WT-MetaD (sum hills)"),
-           ("metadrw", "WT-MetaD (reweighted)"), ("tamd", "TAMD")]
-COL = {"us": "C0", "tass": "C1", "metad": "C2", "metadrw": "C3", "tamd": "C4"}
+           ("metadrw", "WT-MetaD (reweighted)"), ("tamd", "TAMD"),
+           ("opes", "OPES"), ("opesb", "OPES + bucket")]
+COL = {"us": "C0", "tass": "C1", "metad": "C2", "metadrw": "C3", "tamd": "C4", "opes": "C5", "opesb": "C6"}
 KCAL = 4.184
 FCUT, NB = 14.58 * KCAL, fu.NBINS     # 14.58 kcal/mol cutoff (= 61.0 kJ/mol); L2 reported in kcal/mol
 
